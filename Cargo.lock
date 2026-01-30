@@ -837,6 +837,7 @@ version = "0.1.0"
 dependencies = [
  "eframe",
  "egui",
+ "egui_ltreeview",
  "env_logger",
  "log",
  "serde",
@@ -922,6 +923,15 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "winit",
+]
+
+[[package]]
+name = "egui_ltreeview"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3866bdabd204d3839ea4f69252207153864adc4f4f49faecdc579b8d9e362ac9"
+dependencies = [
+ "egui",
 ]
 
 [[package]]
