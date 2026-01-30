@@ -1,0 +1,72 @@
+# Meta con metadata
+[meta]
+label = "Document Metadata"
+description = "Core document information"
+type = "table"
+
+[meta.doc_id]
+label = "Document ID"
+type = "string"
+value = "DOC-2024-001"
+
+[meta.created_at]
+label = "Creation Date"
+description = "When this document was created"
+type = "string"
+value = "2024-01-30"
+
+# Campo principal con todo
+[title]
+label = "Title"
+description = "Main document title - will be displayed prominently"
+type = "string"
+value = "My Application"
+default = "Untitled Project"
+
+# Campo sin metadata
+[debug_mode]
+type = "boolean"
+value = true
+
+# Configuración anidada
+[server]
+label = "Server Configuration"
+description = "Web server settings"
+type = "table"
+
+[server.host]
+label = "Hostname"
+type = "string"
+value = "localhost"
+default = "0.0.0.0"
+
+[server.port]
+label = "Port Number"
+description = "TCP port for the server"
+type = "float"
+value = 8080.0
+default = 3000.0
+
+[server.ssl]
+label = "SSL Settings"
+type = "table"
+
+[server.ssl.enabled]
+label = "Enable SSL"
+type = "boolean"
+value = true
+default = false
+
+# Array de configuraciones compatible con FieldValue::Array
+[modules]
+label = "Application Modules"
+description = "List of enabled modules"
+type = "array"
+
+[[modules.items]]
+name = { type = "string", value = "auth" }
+priority = { type = "float", value = 1.0 }
+
+[[modules.items]]
+name = { type = "string", value = "database" }
+priority = { type = "float", value = 2.0 }

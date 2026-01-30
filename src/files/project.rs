@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    fs,
+    fmt, fs,
     path::{Path, PathBuf},
 };
 
@@ -35,6 +35,27 @@ pub struct File {
     pub children: Vec<File>,
     pub is_folder: bool,
     pub path: PathBuf,
+    pub id: i32,
+}
+
+impl fmt::Display for File {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} (folder: {})", self.name, self.is_folder)
+    }
+}
+
+impl File {
+    pub fn get_file(&self, id: i32) -> Option<&File> {
+        if self.id == id {
+            return Some(self);
+        }
+        for child in &self.children {
+            if let Some(file) = child.get_file(id) {
+                return Some(file);
+            }
+        }
+        None
+    }
 }
 
 impl Project {
@@ -47,6 +68,7 @@ impl Project {
                 children: Vec::new(),
                 is_folder: true,
                 path: path.to_path_buf(),
+                id: 0,
             },
         }
     }
@@ -60,18 +82,11 @@ impl Project {
         Ok(Project::new(&name, path))
     }
 
-    pub fn get_file(&self, path: String) -> Option<&File> {
-        for file in &self.files.children {
-            if file.is_folder {
-                if let Some(child) = file.get_file(path.clone()) {
-                    return Some(child);
-                }
-            } else if file.path == path {
-                Some()
-            }
+    pub fn get_file(&self, id: i32) -> Option<&File> {
+        if self.files.id == id {
+            return Some(&self.files);
         }
-
-        None
+        self.files.get_file(id)
     }
 
     pub fn load(mut self) -> Self {
@@ -93,18 +108,23 @@ impl Project {
         }
 
         println!("Loading files from: {:?}", self.path);
-        self.files.children = self.load_directory(&self.path)?;
+        let mut next_id = 1;
+        self.files.children = self.load_directory(&self.path, &mut next_id)?;
         println!("Total files loaded: {}", self.files.children.len());
+
         Ok(())
     }
 
-    fn load_directory(&self, path: &Path) -> Result<Vec<File>, ProjectError> {
+    fn load_directory(&self, path: &Path, next_id: &mut i32) -> Result<Vec<File>, ProjectError> {
         let mut files = Vec::new();
 
         for entry in fs::read_dir(path)? {
             let entry = entry?;
             let fpath = entry.path();
             let is_folder = fpath.is_dir();
+
+            let current_id = *next_id;
+            *next_id += 1;
 
             let mut file = File {
                 name: fpath
@@ -115,13 +135,19 @@ impl Project {
                 children: Vec::new(),
                 is_folder,
                 path: fpath.clone(),
+                id: current_id,
             };
 
             if is_folder {
-                file.children = self.load_directory(&fpath)?;
+                file.children = self.load_directory(&fpath, next_id)?;
             }
 
-            println!("Found: {} (folder: {})", file.name, file.is_folder);
+            /*
+            println!(
+                "Found: {} (folder: {}, id: {})",
+                file.name, file.is_folder, file.id
+            );
+            */
             files.push(file);
         }
 
@@ -139,6 +165,7 @@ impl Default for Project {
                 children: Vec::new(),
                 is_folder: true,
                 path: PathBuf::from("."),
+                id: 0,
             },
         }
     }

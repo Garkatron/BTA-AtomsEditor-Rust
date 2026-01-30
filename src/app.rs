@@ -1,12 +1,21 @@
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use egui::Ui;
 use egui_ltreeview::{TreeView, TreeViewBuilder, TreeViewState};
+use rust_embed::Embed;
 
 use crate::{
-    components::tabs::Tabs,
+    components::{form_view::Form, tabs::Tabs},
     files::project::{File, Project},
+    form::form::Document,
 };
+
+#[derive(Embed)]
+#[folder = "assets"]
+struct Assets;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -22,13 +31,28 @@ pub struct TemplateApp {
     tab_index: usize,
     #[serde(skip)]
     tabs: Tabs,
+
+    #[serde(skip)]
     project: Project,
 
     #[serde(skip)]
     tree_state: TreeViewState<i32>,
+
+    #[serde(skip)]
+    documents: Vec<Form>,
+
+    #[serde(skip)]
+    current_selected: i32,
 }
 impl Default for TemplateApp {
     fn default() -> Self {
+        let schema_file = Assets::get("block.schema.toml")
+            .ok_or_else(|| format!("Asset not found: {}", "path"))
+            .expect("ERROR AAAAAAAAAAAAAAA");
+        let schema_str = str::from_utf8(&schema_file.data)
+            .map_err(|_| format!("Invalid UTF-8 in asset: {}", "path"))
+            .expect("A");
+
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
@@ -42,6 +66,10 @@ impl Default for TemplateApp {
             )
             .load(),
             tree_state: TreeViewState::default(),
+            documents: vec![Form::new(
+                Document::from_toml(schema_str).expect("EEEEEEEEEEERROOR"),
+            )],
+            current_selected: 0,
         }
     }
 }
@@ -63,35 +91,34 @@ impl TemplateApp {
 
     pub fn project_tree(&mut self, ui: &mut egui::Ui) {
         let id = ui.make_persistent_id(self.project.name.clone());
-        let files = self.project.files.children.clone();
-
         let (response, actions) =
             TreeView::new(id).show_state(ui, &mut self.tree_state, |builder| {
                 builder.dir(0, "Root");
-                Self::build_project_tree_static(builder, &files, &mut 1);
+                Self::build_project_tree_static(builder, &self.project.files.children);
                 builder.close_dir();
             });
 
         if let Some(selected) = self.tree_state.selected().first() {
-            println!("Nodo seleccionado: {}", selected);
+            println!("ID seleccionado del TreeView: {}", selected);
+            if let Some(file) = self.project.get_file(*selected) {
+                if file.id != self.current_selected && !file.is_folder {
+                    self.current_selected = file.id;
+                    // self.content = fs::read_to_string(file.path.clone()).expect("ERROR")
+                }
+            } else {
+                println!("No se encontró archivo con ID: {}", selected);
+            }
         }
     }
 
-    fn build_project_tree_static(
-        builder: &mut TreeViewBuilder<'_, i32>,
-        files: &[File],
-        id_counter: &mut i32,
-    ) {
+    fn build_project_tree_static(builder: &mut TreeViewBuilder<'_, i32>, files: &[File]) {
         for file in files {
-            let current_id = *id_counter;
-            *id_counter += 1;
-
             if file.is_folder {
-                builder.dir(current_id, &file.name);
-                Self::build_project_tree_static(builder, &file.children, id_counter);
+                builder.dir(file.id, &file.name);
+                Self::build_project_tree_static(builder, &file.children);
                 builder.close_dir();
             } else {
-                builder.leaf(current_id, &file.name);
+                builder.leaf(file.id, &file.name);
             }
         }
     }
@@ -130,20 +157,6 @@ impl TemplateApp {
                 egui::vec2(available_size.x * 0.75, available_size.y),
                 egui::Layout::top_down(egui::Align::LEFT),
                 |ui| {
-                    ui.add_space(12.0);
-
-                    ui.horizontal(|ui| {
-                        ui.add_space(8.0);
-                        if ui.button("Add Tab").clicked() {
-                            self.tabs.add_tab("New Tab", |ui: &mut Ui| {
-                                ui.label("Nuevo contenido");
-                            });
-                        }
-                        self.tabs.tab_bar(ui);
-                    });
-
-                    ui.add_space(8.0);
-                    ui.separator();
                     ui.add_space(8.0);
 
                     let content_height = available_size.y - 80.0;
@@ -156,7 +169,12 @@ impl TemplateApp {
                             ui.horizontal(|ui| {
                                 ui.add_space(8.0);
                                 ui.vertical(|ui| {
-                                    self.tabs.show_content(ui);
+                                    /*
+                                    egui::TextEdit::multiline(&mut self.content)
+                                        .desired_width(f32::INFINITY)
+                                        .font(egui::TextStyle::Monospace),
+                                     */
+                                    self.documents[0].show_state(ui);
                                 });
                             });
                         });

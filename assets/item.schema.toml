@@ -1,0 +1,94 @@
+[meta]
+author = "@Garkatron"
+format_version = 2
+
+[data]
+[data.name]
+value = "Item Name"
+type = "string"
+
+[data.tags]
+value = []
+type = "array"
+
+[data.material]
+value = "stone"
+type = "string"
+
+[data.max_stack_size]
+value = 64
+type = "integer"
+
+[textures]
+[textures.texture]
+value = "namespace:item/item_texture"
+type = "string"
+
+[lang]
+[lang.key]
+value = "item_key"
+type = "string"
+
+[lang.locales]
+[lang.locales.en_US]
+[lang.locales.en_US.name]
+value = "Item Name"
+type = "string"
+
+[lang.locales.en_US.desc]
+value = ""
+type = "string"
+
+[lang.locales.en_US.tooltip]
+value = ""
+type = "string"
+
+[recipe]
+[recipe.enable_workbench]
+value = false
+type = "boolean"
+
+[recipe.enable_furnace]
+value = false
+type = "boolean"
+
+[recipe.furnace]
+[recipe.furnace.out_item_id]
+value = 1
+type = "integer"
+
+[recipe.furnace.output_amount]
+value = 0
+type = "integer"
+
+[recipe.workbench]
+[recipe.workbench.pattern]
+value = [["X", "X", "X"], ["X", "X", "X"], ["X", "X", "X"]]
+type = "array"
+
+[recipe.workbench.output_amount]
+value = 0
+type = "integer"
+
+[[recipe.workbench.symbols]]
+[recipe.workbench.symbols.X]
+value = 1
+type = "integer"
+
+[tool]
+[tool.type]
+value = ""
+type = "string"
+
+[food]
+[food.heal_amount]
+value = 0
+type = "integer"
+
+[food.ticks_per_heal]
+value = 0
+type = "integer"
+
+[food.favourite_wolf_meat]
+value = false
+type = "boolean"
