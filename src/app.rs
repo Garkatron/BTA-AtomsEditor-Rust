@@ -1,14 +1,18 @@
 use std::{
+    cell::RefCell,
     fs,
     path::{Path, PathBuf},
+    rc::Rc,
+    task::Context,
 };
 
-use egui::Ui;
+use egui::{Slider, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder, TreeViewState};
 use rust_embed::Embed;
 
 use crate::{
-    components::{form_view::Form, tabs::Tabs},
+    components::{form_config::FormConfig, form_view::Form, tabs::Tabs},
+    config::Config,
     files::project::{File, Project},
     form::form::Document,
 };
@@ -23,6 +27,10 @@ struct Assets;
 pub struct TemplateApp {
     // Example stuff:
     label: String,
+
+    config: Config,
+    form_config: FormConfig,
+    show_settings: bool,
 
     #[serde(skip)] // This how you opt-out of serialization of a field
     value: f32,
@@ -60,16 +68,15 @@ impl Default for TemplateApp {
             tab_index: 0,
             tabs: Tabs::default(),
 
-            project: Project::new(
-                "Test",
-                Path::new("/home/bazzite/IdeaProjects/BTA-Atoms/run/btd/data/jade.project"),
-            )
-            .load(),
+            project: Project::new("Test", Path::new("/home/bazzite/Documentos/btd")).load(),
             tree_state: TreeViewState::default(),
             documents: vec![Form::new(
                 Document::from_toml(schema_str).expect("EEEEEEEEEEERROOR"),
             )],
             current_selected: 0,
+            config: Config::default(),
+            form_config: FormConfig::default(),
+            show_settings: false,
         }
     }
 }
@@ -174,13 +181,66 @@ impl TemplateApp {
                                         .desired_width(f32::INFINITY)
                                         .font(egui::TextStyle::Monospace),
                                      */
-                                    self.documents[0].show_state(ui);
+                                    self.documents[0].show_state(ui, &self.form_config);
                                 });
                             });
                         });
                 },
             );
         });
+    }
+    pub fn form_config_window(&mut self, ctx: &egui::Context) {
+        egui::Window::new("⚙️ Form Settings")
+            .collapsible(false)
+            .resizable(true)
+            .default_width(400.0)
+            .show(ctx, |ui| {
+                ui.add_space(8.0);
+                ui.heading("Font size");
+                ui.add_space(12.0);
+                ui.horizontal(|ui| {
+                    ui.label("Headers:");
+                    ui.add(
+                        Slider::new(&mut self.form_config.font_size_header, 10.0..=32.0).text("px"),
+                    );
+                });
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    ui.label("Tags:");
+                    ui.add(
+                        Slider::new(&mut self.form_config.font_size_label, 10.0..=32.0).text("px"),
+                    );
+                });
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    ui.label("Descriptions:");
+                    ui.add(
+                        Slider::new(&mut self.form_config.font_size_description, 10.0..=32.0)
+                            .text("px"),
+                    );
+                });
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    ui.label("Text:");
+                    ui.add(
+                        Slider::new(&mut self.form_config.font_size_text, 10.0..=32.0).text("px"),
+                    );
+                });
+                ui.add_space(16.0);
+                ui.separator();
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    if ui.button("Reset to default").clicked() {
+                        self.form_config = FormConfig::default();
+                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button("Close").clicked() {
+                            self.show_settings = false;
+                        }
+                    });
+                });
+                ui.add_space(8.0);
+            });
     }
 }
 
@@ -194,6 +254,10 @@ impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
+
+        if self.show_settings {
+            self.form_config_window(ctx);
+        }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
@@ -211,6 +275,10 @@ impl eframe::App for TemplateApp {
                 }
 
                 egui::widgets::global_theme_preference_buttons(ui);
+
+                if ui.button("⚙️ Settings").clicked() {
+                    self.show_settings = !self.show_settings;
+                }
             });
         });
 

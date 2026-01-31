@@ -25,8 +25,9 @@ log = "0.4.27"
 # You only need serde if you want app persistence:
 serde = { version = "1.0.219", features = ["derive"] }
 egui_ltreeview = "0.6.1"
-toml = "0.9.11"
+toml = { version = "0.9.11", features = ["preserve_order"]}
 rust-embed = "8.11.0"
+indexmap = { version = "2.13.0", features = ["serde"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

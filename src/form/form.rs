@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
-use serde::{Deserialize, Serialize, de::Error};
+use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
@@ -27,24 +26,42 @@ pub enum FieldValue {
     #[serde(rename = "table")]
     Table {
         #[serde(flatten)]
-        children: HashMap<String, Field>,
+        children: IndexMap<String, Field>,
     },
     #[serde(rename = "array")]
-    Array { items: Vec<HashMap<String, Field>> },
+    Array {
+        #[serde(default)]
+        value: ArrayValue,
+    },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum ArrayValue {
+    Strings(Vec<String>),
+    Numbers(Vec<f64>),
+    Objects(Vec<IndexMap<String, Field>>),
+    Mixed(Vec<toml::Value>),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Document {
     #[serde(flatten)]
-    pub fields: HashMap<String, Field>,
+    pub fields: IndexMap<String, Field>,
 }
 
 impl Document {
-    pub fn new(fields: HashMap<String, Field>) -> Self {
+    pub fn new(fields: IndexMap<String, Field>) -> Self {
         Self { fields }
     }
     pub fn from_toml(toml_str: &str) -> Result<Self, toml::de::Error> {
         let doc: Document = toml::from_str(toml_str)?;
         Ok(doc)
+    }
+}
+
+impl Default for ArrayValue {
+    fn default() -> Self {
+        ArrayValue::Strings(Vec::new())
     }
 }

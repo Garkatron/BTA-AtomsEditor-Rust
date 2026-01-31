@@ -3,5 +3,6 @@
 mod app;
 pub use app::TemplateApp;
 mod components;
+mod config;
 mod files;
 mod form;

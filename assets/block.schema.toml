@@ -1,72 +1,299 @@
-# Meta con metadata
+# =========================
+# Metadata del bloque
+# =========================
 [meta]
-label = "Document Metadata"
-description = "Core document information"
+label = "Block Metadata"
+description = "Core metadata for the block definition"
 type = "table"
 
-[meta.doc_id]
-label = "Document ID"
+[meta.author]
+label = "Author"
 type = "string"
-value = "DOC-2024-001"
+value = "@Garkatron"
 
-[meta.created_at]
-label = "Creation Date"
-description = "When this document was created"
+[meta.object_type]
+label = "Object Type"
 type = "string"
-value = "2024-01-30"
+value = "BLOCK"
 
-# Campo principal con todo
-[title]
-label = "Title"
-description = "Main document title - will be displayed prominently"
-type = "string"
-value = "My Application"
-default = "Untitled Project"
-
-# Campo sin metadata
-[debug_mode]
-type = "boolean"
-value = true
-
-# Configuración anidada
-[server]
-label = "Server Configuration"
-description = "Web server settings"
-type = "table"
-
-[server.host]
-label = "Hostname"
-type = "string"
-value = "localhost"
-default = "0.0.0.0"
-
-[server.port]
-label = "Port Number"
-description = "TCP port for the server"
+[meta.format_version]
+label = "Format Version"
 type = "float"
-value = 8080.0
-default = 3000.0
+value = 2.0
 
-[server.ssl]
-label = "SSL Settings"
+
+# =========================
+# Datos principales
+# =========================
+[data]
+label = "Block Data"
+description = "Main block properties"
 type = "table"
 
-[server.ssl.enabled]
-label = "Enable SSL"
+[data.name]
+label = "Internal Name"
+type = "string"
+value = "Jade Gold Decorated 8"
+
+[data.tags]
+label = "Tags"
+type = "array"
+value = [ "mineable_by_pickaxe" ]
+
+[data.immovable]
+label = "Immovable"
+type = "boolean"
+value = false
+
+[data.unbreakable]
+label = "Unbreakable"
+type = "boolean"
+value = false
+
+[data.resistance]
+label = "Explosion Resistance"
+type = "float"
+value = 2.0
+
+[data.slipperiness]
+label = "Slipperiness"
+type = "float"
+value = 0.6
+
+[data.hardness]
+label = "Hardness"
+type = "float"
+value = 2.0
+
+[data.material]
+label = "Material Type"
+type = "string"
+value = "stone"
+
+[data.luminance]
+label = "Luminance"
+type = "float"
+value = 0.0
+
+
+# =========================
+# Texturas
+# =========================
+[textures]
+label = "Textures"
+type = "table"
+
+[textures.faces]
+label = "Block Faces"
+type = "table"
+
+[textures.faces.top]
+label = "Top Texture"
+type = "string"
+value = "jade:block/jc8"
+
+[textures.faces.bottom]
+label = "Bottom Texture"
+type = "string"
+value = "jade:block/jc8"
+
+[textures.faces.north]
+label = "North Texture"
+type = "string"
+value = "jade:block/jc8"
+
+[textures.faces.south]
+label = "South Texture"
+type = "string"
+value = "jade:block/jc8"
+
+[textures.faces.east]
+label = "East Texture"
+type = "string"
+value = "jade:block/jc8"
+
+[textures.faces.west]
+label = "West Texture"
+type = "string"
+value = "jade:block/jc8"
+
+
+# =========================
+# Eventos
+# =========================
+[events]
+label = "Events"
+type = "table"
+
+[events.on_break]
+label = "On Break Event"
+type = "table"
+
+[events.on_break.drop_itself]
+label = "Drop Itself"
 type = "boolean"
 value = true
-default = false
 
-# Array de configuraciones compatible con FieldValue::Array
-[modules]
-label = "Application Modules"
-description = "List of enabled modules"
+[events.on_break.drops]
+label = "Drop Rules"
 type = "array"
+value = [
+  { item = 0.0, cause = "PROPER_TOOL", chance = 0.0 }
+]
 
-[[modules.items]]
-name = { type = "string", value = "auth" }
-priority = { type = "float", value = 1.0 }
 
-[[modules.items]]
-name = { type = "string", value = "database" }
-priority = { type = "float", value = 2.0 }
+# =========================
+# Sonidos
+# =========================
+[sounds]
+label = "Sound Settings"
+type = "table"
+
+[sounds.sound]
+label = "Sound Type"
+type = "string"
+value = "METAL"
+
+
+# =========================
+# Recetas
+# =========================
+[recipe]
+label = "Crafting Recipe"
+type = "table"
+
+[recipe.enable_workbench]
+label = "Enable Workbench"
+type = "boolean"
+value = false
+
+[recipe.enable_furnace]
+label = "Enable Furnace"
+type = "boolean"
+value = false
+
+
+[recipe.furnace]
+label = "Furnace Recipe"
+type = "table"
+
+[recipe.furnace.out_item_id]
+label = "Output Item ID"
+type = "float"
+value = 1.0
+
+[recipe.furnace.output_amount]
+label = "Output Amount"
+type = "float"
+value = 0.0
+
+
+[recipe.workbench]
+label = "Workbench Recipe"
+type = "table"
+
+[recipe.workbench.pattern]
+label = "Crafting Pattern"
+type = "array"
+value = [
+  [ "X", "X", "X" ],
+  [ "X", "X", "X" ],
+  [ "X", "X", "X" ]
+]
+
+[recipe.workbench.output_amount]
+label = "Output Amount"
+type = "float"
+value = 0.0
+
+[recipe.workbench.symbols]
+label = "Workbench Symbols"
+type = "array"
+value = [
+  { X = 1.0 }
+]
+
+
+# =========================
+# Idiomas
+# =========================
+[lang]
+label = "Language Keys"
+type = "table"
+
+[lang.key]
+label = "Translation Key"
+type = "string"
+value = "jade_gold_decorated_8"
+
+[lang.locales]
+label = "Locales"
+type = "table"
+
+[lang.locales.en_US]
+label = "English (US)"
+type = "table"
+
+[lang.locales.en_US.name]
+label = "Display Name"
+type = "string"
+value = "Jade Gold Decorated 8"
+
+[lang.locales.en_US.desc]
+label = "Description"
+type = "string"
+value = ""
+
+[lang.locales.en_US.tooltip]
+label = "Tooltip"
+type = "string"
+value = ""
+
+
+# =========================
+# Inflamabilidad
+# =========================
+[flammability]
+label = "Flammability"
+type = "table"
+
+[flammability.chance_to_catch_fire]
+label = "Chance to Catch Fire"
+type = "float"
+value = 0.0
+
+[flammability.change_to_degrade]
+label = "Chance to Degrade"
+type = "float"
+value = 0.0
+
+
+# =========================
+# Renderizado
+# =========================
+[render]
+label = "Render Settings"
+type = "table"
+
+[render.is_cube_shaped]
+label = "Cube Shaped"
+type = "boolean"
+value = true
+
+[render.is_solid_render]
+label = "Solid Render"
+type = "boolean"
+value = true
+
+
+# =========================
+# Física
+# =========================
+[physics]
+label = "Physics Settings"
+type = "table"
+
+[physics.is_collidable]
+label = "Is Collidable"
+type = "boolean"
+value = true
