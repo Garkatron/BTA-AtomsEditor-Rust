@@ -6,7 +6,7 @@ use std::{
     task::Context,
 };
 
-use egui::{Slider, Ui};
+use egui::{Response, Slider, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder, TreeViewState};
 use rust_embed::Embed;
 
@@ -27,6 +27,7 @@ struct Assets;
 pub struct TemplateApp {
     // Example stuff:
     label: String,
+    base_folder: Option<String>,
 
     config: Config,
     form_config: FormConfig,
@@ -41,7 +42,7 @@ pub struct TemplateApp {
     tabs: Tabs,
 
     #[serde(skip)]
-    project: Project,
+    project: Option<Project>,
 
     #[serde(skip)]
     tree_state: TreeViewState<i32>,
@@ -68,7 +69,7 @@ impl Default for TemplateApp {
             tab_index: 0,
             tabs: Tabs::default(),
 
-            project: Project::new("Test", Path::new("/home/bazzite/Documentos/btd")).load(),
+            project: None,
             tree_state: TreeViewState::default(),
             documents: vec![Form::new(
                 Document::from_toml(schema_str).expect("EEEEEEEEEEERROOR"),
@@ -77,6 +78,7 @@ impl Default for TemplateApp {
             config: Config::default(),
             form_config: FormConfig::default(),
             show_settings: false,
+            base_folder: None,
         }
     }
 }
@@ -96,24 +98,52 @@ impl TemplateApp {
         }
     }
 
-    pub fn project_tree(&mut self, ui: &mut egui::Ui) {
-        let id = ui.make_persistent_id(self.project.name.clone());
-        let (response, actions) =
-            TreeView::new(id).show_state(ui, &mut self.tree_state, |builder| {
-                builder.dir(0, "Root");
-                Self::build_project_tree_static(builder, &self.project.files.children);
-                builder.close_dir();
-            });
+    pub fn open_and_create_project(&mut self, path: &PathBuf) {
+        let root_folder = PathBuf::from(path);
 
-        if let Some(selected) = self.tree_state.selected().first() {
-            println!("ID seleccionado del TreeView: {}", selected);
-            if let Some(file) = self.project.get_file(*selected) {
-                if file.id != self.current_selected && !file.is_folder {
-                    self.current_selected = file.id;
-                    // self.content = fs::read_to_string(file.path.clone()).expect("ERROR")
+        if root_folder.is_dir() {
+            fs::create_dir(root_folder.join("data")).ok();
+            fs::create_dir(root_folder.join("recipes")).ok();
+            fs::create_dir(root_folder.join("assets")).ok();
+
+            self.project = Some(
+                Project::from(&root_folder)
+                    .expect("AAAAAAAAAAAAAAAAA")
+                    .load(),
+            );
+        }
+    }
+    pub fn open_project(&mut self, path: &PathBuf) {
+        let root_folder = PathBuf::from(path);
+
+        if root_folder.is_dir() {
+            self.project = Some(
+                Project::from(&root_folder)
+                    .expect("AAAAAAAAAAAAAAAAA")
+                    .load(),
+            );
+        }
+    }
+
+    pub fn project_tree(&mut self, ui: &mut egui::Ui) {
+        if let Some(project) = &self.project {
+            let id = ui.make_persistent_id(project.name.clone());
+            let (response, actions) =
+                TreeView::new(id).show_state(ui, &mut self.tree_state, |builder| {
+                    builder.dir(0, "Root");
+                    Self::build_project_tree_static(builder, &project.files.children);
+                    builder.close_dir();
+                });
+            if let Some(selected) = self.tree_state.selected().first() {
+                println!("ID seleccionado del TreeView: {}", selected);
+                if let Some(file) = project.get_file(*selected) {
+                    if file.id != self.current_selected && !file.is_folder {
+                        self.current_selected = file.id;
+                    }
+                    self.show_file_options_popup(ui, &file.path.clone(), file.id, response);
+                } else {
+                    println!("No se encontró archivo con ID: {}", selected);
                 }
-            } else {
-                println!("No se encontró archivo con ID: {}", selected);
             }
         }
     }
@@ -130,6 +160,47 @@ impl TemplateApp {
         }
     }
 
+    pub fn show_file_options_popup(
+        &mut self,
+        ui: &mut Ui,
+        path: &PathBuf,
+        file_id: i32,
+        response: Response,
+    ) {
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("<unknown>");
+
+        egui::Popup::menu(&response)
+            .kind(egui::PopupKind::Menu)
+            .layout(egui::Layout::top_down_justified(egui::Align::Min))
+            .align(egui::RectAlign::BOTTOM_START)
+            .gap(2.0)
+            .show(|ui| {
+                if path.is_dir() {
+                    if ui.button("Create block").clicked() {
+                        ui.close_menu();
+                    }
+                    if ui.button("Create item").clicked() {
+                        ui.close_menu();
+                    }
+                    if ui.button("Delete").clicked() {
+                        ui.close_menu();
+                    }
+                } else {
+                    if ui.button("Open").clicked() {
+                        ui.close_menu();
+                    }
+                    if ui.button("Duplicate").clicked() {
+                        ui.close_menu();
+                    }
+                    if ui.button("Delete").clicked() {
+                        ui.close_menu();
+                    }
+                }
+            });
+    }
     pub fn central_panel_content(&mut self, ui: &mut egui::Ui) {
         let available_size = ui.available_size();
         ui.horizontal(|ui| {
@@ -255,6 +326,15 @@ impl eframe::App for TemplateApp {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
+        if let Some(base_folder) = &self.base_folder {
+            self.open_project(&PathBuf::from(base_folder));
+        } else {
+            if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                self.base_folder = Some(path.to_string_lossy().to_string());
+                self.open_and_create_project(&path);
+            }
+        }
+
         if self.show_settings {
             self.form_config_window(ctx);
         }
@@ -267,6 +347,18 @@ impl eframe::App for TemplateApp {
                 let is_web = cfg!(target_arch = "wasm32");
                 if !is_web {
                     ui.menu_button("File", |ui| {
+                        if ui.button("Open project").clicked() {
+                            if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                                self.base_folder = Some(path.to_string_lossy().to_string());
+                                self.open_project(&path);
+                            }
+                        }
+                        if ui.button("Create project").clicked() {
+                            if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                                self.base_folder = Some(path.to_string_lossy().to_string());
+                                self.open_and_create_project(&path);
+                            }
+                        }
                         if ui.button("Quit").clicked() {
                             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         }

@@ -7,11 +7,18 @@ pub struct Field {
     pub description: Option<String>,
     pub editable: Option<bool>,
     pub template: Option<bool>,
+    pub convert: Option<FieldType>,
     #[serde(flatten)]
     pub value: FieldValue,
 }
+#[derive(Serialize, Deserialize, Clone)]
+pub struct EnumField {
+    pub value: String,
+    pub options: Vec<String>,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum FieldType {
     String,
     Integer,
@@ -49,18 +56,38 @@ pub enum FieldValue {
     },
     #[serde(rename = "array")]
     Array {
-        #[serde(default)]
+        #[serde(flatten)]
         value: ArrayValue,
+    },
+    #[serde(rename = "enum")]
+    Enum {
+        #[serde(default)]
+        value: String,
+        #[serde(default)]
+        options: Vec<String>,
     },
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-#[serde(untagged)]
+#[serde(tag = "array_type")]
 pub enum ArrayValue {
-    Strings(Vec<String>),
-    Numbers(Vec<f64>),
-    Objects(Vec<IndexMap<String, Field>>),
-    Mixed(Vec<toml::Value>),
+    #[serde(rename = "enums")]
+    Enums { items: Vec<EnumField> },
+
+    #[serde(rename = "strings")]
+    Strings { items: Vec<String> },
+
+    #[serde(rename = "floats")]
+    Floats { items: Vec<f64> },
+
+    #[serde(rename = "integers")]
+    Integers { items: Vec<i64> },
+
+    #[serde(rename = "objects")]
+    Objects { items: Vec<IndexMap<String, Field>> },
+
+    #[serde(rename = "mixed")]
+    Mixed { items: Vec<toml::Value> },
 }
 
 #[derive(Serialize, Deserialize)]
@@ -81,7 +108,7 @@ impl Document {
 
 impl Default for ArrayValue {
     fn default() -> Self {
-        ArrayValue::Strings(Vec::new())
+        ArrayValue::Strings { items: Vec::new() }
     }
 }
 
@@ -96,6 +123,7 @@ impl Field {
                 value: String::new(),
                 default: None,
             },
+            convert: None,
         }
     }
 
@@ -109,6 +137,7 @@ impl Field {
                 default: None,
             },
             template: Some(false),
+            convert: None,
         }
     }
 
@@ -122,6 +151,7 @@ impl Field {
                 default: None,
             },
             template: Some(false),
+            convert: None,
         }
     }
 
@@ -135,6 +165,7 @@ impl Field {
                 default: None,
             },
             template: Some(false),
+            convert: None,
         }
     }
 
@@ -148,6 +179,7 @@ impl Field {
                 texture: None,
             },
             template: Some(false),
+            convert: None,
         }
     }
 
@@ -160,6 +192,7 @@ impl Field {
                 children: IndexMap::new(),
             },
             template: Some(false),
+            convert: None,
         }
     }
 
@@ -172,6 +205,21 @@ impl Field {
                 value: ArrayValue::default(),
             },
             template: Some(false),
+            convert: None,
+        }
+    }
+
+    pub fn default_enum() -> Self {
+        Self {
+            label: None,
+            description: None,
+            editable: Some(true),
+            value: FieldValue::Enum {
+                value: String::new(),
+                options: Vec::new(),
+            },
+            template: Some(false),
+            convert: None,
         }
     }
 }

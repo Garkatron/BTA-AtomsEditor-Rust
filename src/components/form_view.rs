@@ -5,7 +5,7 @@ use toml::Value;
 
 use crate::{
     components::form_config::FormConfig,
-    form::form::{ArrayValue, Document, Field, FieldType, FieldValue},
+    form::form::{ArrayValue, Document, EnumField, Field, FieldType, FieldValue},
 };
 
 pub struct Form {
@@ -52,6 +52,7 @@ impl Form {
                     description.as_deref(),
                     fonts,
                     editable,
+                    template,
                     indent,
                     level,
                     form_config,
@@ -63,6 +64,7 @@ impl Form {
             | FieldValue::Integer { .. }
             | FieldValue::String { .. }
             | FieldValue::Image { .. }
+            | FieldValue::Enum { .. }
             | FieldValue::Table { .. } => {
                 Self::show_field_value(field, ui, key, level, editable, template, fonts);
             }
@@ -117,6 +119,10 @@ impl Form {
                 Self::render_image(ui, value, texture, label, fonts);
             }
 
+            FieldValue::Enum { value, options } => {
+                Self::render_enum(ui, value, options, label, &field.description, fonts, indent);
+            }
+
             _ => {}
         }
     }
@@ -125,6 +131,41 @@ impl Form {
     // INDIVIDUAL FIELD RENDERERS
     // ==============================================
 
+    fn render_enum(
+        ui: &mut Ui,
+        value: &mut String,
+        options: &mut Vec<String>,
+        label: &str,
+        description: &Option<String>,
+        fonts: FormFonts,
+        indent: f32,
+    ) {
+        ui.add_space(4.0);
+        ui.horizontal(|ui| {
+            ui.add_space(indent);
+            ui.label(egui::RichText::new(label).font(fonts.label));
+
+            if !options.is_empty() && !options.contains(value) {
+                *value = options[0].clone();
+            }
+
+            let combo_id = ui.make_persistent_id(format!("enum_combo_{}", label));
+
+            egui::ComboBox::from_id_salt(combo_id)
+                .selected_text(if value.is_empty() {
+                    "Select..."
+                } else {
+                    value.as_str()
+                })
+                .show_ui(ui, |ui| {
+                    for option in options.iter() {
+                        ui.selectable_value(value, option.clone(), option.as_str());
+                    }
+                });
+        });
+        Self::render_description(ui, description, &fonts.description);
+        ui.add_space(4.0);
+    }
     fn render_boolean(
         ui: &mut Ui,
         value: &mut bool,
@@ -217,89 +258,115 @@ impl Form {
         template: bool,
     ) {
         ui.add_space(4.0);
-        ui.collapsing(egui::RichText::new(label).font(fonts.header), |ui| {
-            if let Some(desc) = description.as_deref() {
-                ui.add_space(1.0);
-                ui.label(egui::RichText::new(desc).font(fonts.description));
-                ui.separator();
-            }
-            let mut remove_key: Option<String> = None;
-            for (child_key, child_field) in children.iter_mut() {
-                ui.horizontal(|ui| {
-                    Self::show_fields(
-                        child_field,
-                        ui,
-                        child_key,
-                        level + 1,
-                        &FormConfig::default(),
+        ui.collapsing(
+            egui::RichText::new(label)
+                .font(fonts.label.clone())
+                .strong(),
+            |ui| {
+                if let Some(desc) = description.as_deref() {
+                    ui.add_space(1.0);
+                    ui.label(
+                        egui::RichText::new(desc)
+                            .font(fonts.description.clone())
+                            .color(egui::Color32::GRAY),
                     );
-                    if editable && ui.button("X").clicked() {
-                        remove_key = Some(child_key.clone());
-                    }
-                });
-            }
-            if let Some(key) = remove_key {
-                children.shift_remove(&key);
-            }
-            if editable {
-                ui.separator();
-                ui.horizontal(|ui| {
-                    ui.label("Add field:");
-                    let combo_id = ui.make_persistent_id(format!("field_type_combo_{}", label));
-                    let text_id = ui.make_persistent_id(format!("new_key_text_{}", label));
-
-                    let mut selected = ui.data_mut(|d| {
-                        d.get_persisted::<FieldType>(combo_id)
-                            .unwrap_or(FieldType::String)
-                    });
-
-                    if !template {
-                        egui::ComboBox::from_id_salt(combo_id)
-                            .selected_text(format!("{:?}", selected))
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut selected, FieldType::String, "String");
-                                ui.selectable_value(&mut selected, FieldType::Integer, "Integer");
-                                ui.selectable_value(&mut selected, FieldType::Float, "Float");
-                                ui.selectable_value(&mut selected, FieldType::Boolean, "Boolean");
-                                ui.selectable_value(&mut selected, FieldType::Image, "Image");
-                                ui.selectable_value(&mut selected, FieldType::Table, "Table");
-                                ui.selectable_value(&mut selected, FieldType::Array, "Array");
-                            });
-                        ui.data_mut(|d| d.insert_persisted(combo_id, selected));
-                    }
-
-                    let mut new_key = ui.data_mut(|d| {
-                        d.get_persisted::<String>(text_id)
-                            .unwrap_or_else(|| String::from("value"))
-                    });
-
-                    ui.text_edit_singleline(&mut new_key);
-                    ui.data_mut(|d| d.insert_persisted(text_id, new_key.clone()));
-
-                    if ui.button("Add").clicked() {
-                        let mut new_field = if template {
-                            children
-                                .get_index(0)
-                                .map(|(_, f)| f.clone())
-                                .unwrap_or_else(Field::default_string)
-                        } else {
-                            match selected {
-                                FieldType::String => Field::default_string(),
-                                FieldType::Integer => Field::default_integer(),
-                                FieldType::Float => Field::default_float(),
-                                FieldType::Boolean => Field::default_boolean(),
-                                FieldType::Image => Field::default_image(),
-                                FieldType::Table => Field::default_table(),
-                                FieldType::Array => Field::default_array(),
+                    ui.separator();
+                }
+                let mut remove_key: Option<String> = None;
+                for (child_key, child_field) in children.iter_mut() {
+                    ui.horizontal(|ui| {
+                        Self::show_fields(
+                            child_field,
+                            ui,
+                            child_key,
+                            level + 1,
+                            &FormConfig::default(),
+                        );
+                        if editable {
+                            if ui
+                                .add(
+                                    egui::Button::new("✕")
+                                        .fill(egui::Color32::TRANSPARENT)
+                                        .stroke(egui::Stroke::NONE),
+                                )
+                                .clicked()
+                            {
+                                remove_key = Some(child_key.clone());
                             }
-                        };
-                        new_field.label = Some(new_key.clone());
-                        children.insert(new_key.clone(), new_field);
-                        ui.data_mut(|d| d.insert_persisted(text_id, String::from("value")));
-                    }
-                });
-            }
-        });
+                        }
+                    });
+                }
+                if let Some(key) = remove_key {
+                    children.shift_remove(&key);
+                }
+                if editable {
+                    ui.separator();
+                    ui.horizontal(|ui| {
+                        ui.label("Add field:");
+                        let combo_id = ui.make_persistent_id(format!("field_type_combo_{}", label));
+                        let text_id = ui.make_persistent_id(format!("new_key_text_{}", label));
+
+                        let mut selected = ui.data_mut(|d| {
+                            d.get_persisted::<FieldType>(combo_id)
+                                .unwrap_or(FieldType::String)
+                        });
+
+                        if !template {
+                            egui::ComboBox::from_id_salt(combo_id)
+                                .selected_text(format!("{:?}", selected))
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut selected, FieldType::String, "String");
+                                    ui.selectable_value(
+                                        &mut selected,
+                                        FieldType::Integer,
+                                        "Integer",
+                                    );
+                                    ui.selectable_value(&mut selected, FieldType::Float, "Float");
+                                    ui.selectable_value(
+                                        &mut selected,
+                                        FieldType::Boolean,
+                                        "Boolean",
+                                    );
+                                    ui.selectable_value(&mut selected, FieldType::Image, "Image");
+                                    ui.selectable_value(&mut selected, FieldType::Table, "Table");
+                                    ui.selectable_value(&mut selected, FieldType::Array, "Array");
+                                });
+                            ui.data_mut(|d| d.insert_persisted(combo_id, selected));
+                        }
+
+                        let mut new_key = ui.data_mut(|d| {
+                            d.get_persisted::<String>(text_id)
+                                .unwrap_or_else(|| String::from("value"))
+                        });
+
+                        ui.text_edit_singleline(&mut new_key);
+                        ui.data_mut(|d| d.insert_persisted(text_id, new_key.clone()));
+
+                        if ui.button("Add").clicked() {
+                            let mut new_field = if template {
+                                children
+                                    .get_index(0)
+                                    .map(|(_, f)| f.clone())
+                                    .unwrap_or_else(Field::default_string)
+                            } else {
+                                match selected {
+                                    FieldType::String => Field::default_string(),
+                                    FieldType::Integer => Field::default_integer(),
+                                    FieldType::Float => Field::default_float(),
+                                    FieldType::Boolean => Field::default_boolean(),
+                                    FieldType::Image => Field::default_image(),
+                                    FieldType::Table => Field::default_table(),
+                                    FieldType::Array => Field::default_array(),
+                                }
+                            };
+                            new_field.label = Some(new_key.clone());
+                            children.insert(new_key.clone(), new_field);
+                            ui.data_mut(|d| d.insert_persisted(text_id, String::from("value")));
+                        }
+                    });
+                }
+            },
+        );
     }
 
     fn render_image(
@@ -364,7 +431,11 @@ impl Form {
     fn render_description(ui: &mut Ui, description: &Option<String>, font: &FontId) {
         if let Some(desc) = description.as_deref() {
             ui.add_space(1.0);
-            ui.label(egui::RichText::new(desc).font(font.clone()));
+            ui.label(
+                egui::RichText::new(desc)
+                    .font(font.clone())
+                    .color(egui::Color32::GRAY),
+            );
         }
     }
 
@@ -380,6 +451,7 @@ impl Form {
         description: Option<&str>,
         fonts: FormFonts,
         editable: bool,
+        template: bool,
         indent: f32,
         level: usize,
         form_config: &FormConfig,
@@ -389,29 +461,32 @@ impl Form {
 
         if let Some(desc) = description {
             ui.add_space(2.0);
-            ui.label(egui::RichText::new(desc).font(fonts.description.clone()));
+            ui.label(
+                egui::RichText::new(desc)
+                    .font(fonts.description.clone())
+                    .color(egui::Color32::GRAY),
+            );
         }
 
         ui.collapsing(key, |ui| match value {
-            ArrayValue::Strings(strings) => {
-                Self::render_array_strings(ui, strings, fonts, editable, indent);
+            ArrayValue::Strings { items } => {
+                Self::render_array_strings(ui, items, fonts, editable, indent);
             }
-            ArrayValue::Numbers(numbers) => {
-                Self::render_array_numbers(ui, numbers, fonts, editable, indent);
+            ArrayValue::Floats { items } => {
+                Self::render_array_floats(ui, items, fonts, editable, indent);
             }
-            ArrayValue::Objects(objects) => {
-                Self::render_array_objects(
-                    ui,
-                    objects,
-                    level,
-                    form_config,
-                    fonts,
-                    editable,
-                    indent,
-                );
+
+            ArrayValue::Integers { items } => {
+                Self::render_array_integers(ui, items, fonts, editable, indent);
             }
-            ArrayValue::Mixed(values) => {
-                Self::render_array_mixed(ui, values, fonts, indent);
+            ArrayValue::Objects { items } => {
+                Self::render_array_objects(ui, items, level, form_config, fonts, editable, indent);
+            }
+            ArrayValue::Mixed { items } => {
+                Self::render_array_mixed(ui, items, fonts, indent);
+            }
+            ArrayValue::Enums { items } => {
+                Self::render_array_enums(ui, items, fonts, editable, template, indent);
             }
         });
 
@@ -451,7 +526,7 @@ impl Form {
         }
     }
 
-    fn render_array_numbers(
+    fn render_array_floats(
         ui: &mut Ui,
         numbers: &mut Vec<f64>,
         fonts: FormFonts,
@@ -477,6 +552,35 @@ impl Form {
 
         if editable && ui.button("Add").clicked() {
             numbers.push(0.0);
+        }
+    }
+
+    fn render_array_integers(
+        ui: &mut Ui,
+        numbers: &mut Vec<i64>,
+        fonts: FormFonts,
+        editable: bool,
+        indent: f32,
+    ) {
+        let mut remove_index: Option<usize> = None;
+
+        for (i, n) in numbers.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.add_space(indent);
+                ui.label(egui::RichText::new(format!("[{}]", i)).font(fonts.label.clone()));
+                ui.add(egui::DragValue::new(n));
+                if editable && ui.button("X").clicked() {
+                    remove_index = Some(i);
+                }
+            });
+        }
+
+        if let Some(i) = remove_index {
+            numbers.remove(i);
+        }
+
+        if editable && ui.button("Add").clicked() {
+            numbers.push(0);
         }
     }
 
@@ -526,6 +630,68 @@ impl Form {
                         .color(egui::Color32::LIGHT_GRAY),
                 );
             });
+        }
+    }
+
+    fn render_array_enums(
+        ui: &mut Ui,
+        enums: &mut Vec<EnumField>,
+        fonts: FormFonts,
+        editable: bool,
+        template: bool,
+        indent: f32,
+    ) {
+        let mut remove_index: Option<usize> = None;
+
+        for (i, enum_field) in enums.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.add_space(indent);
+                ui.label(egui::RichText::new(format!("[{}]", i)).font(fonts.label.clone()));
+
+                if !enum_field.options.is_empty() && !enum_field.options.contains(&enum_field.value)
+                {
+                    enum_field.value = enum_field.options[0].clone();
+                }
+
+                let combo_id =
+                    ui.make_persistent_id(format!("array_enum_{}_{}", i, enum_field.value));
+
+                egui::ComboBox::from_id_salt(combo_id)
+                    .selected_text(if enum_field.value.is_empty() {
+                        "Select..."
+                    } else {
+                        enum_field.value.as_str()
+                    })
+                    .show_ui(ui, |ui| {
+                        for option in enum_field.options.iter() {
+                            ui.selectable_value(
+                                &mut enum_field.value,
+                                option.clone(),
+                                option.as_str(),
+                            );
+                        }
+                    });
+
+                if editable && ui.button("X").clicked() {
+                    remove_index = Some(i);
+                }
+            });
+        }
+
+        if let Some(i) = remove_index {
+            enums.remove(i);
+        }
+
+        if editable && ui.button("Add").clicked() {
+            let new_enum = if template && !enums.is_empty() {
+                enums[0].clone()
+            } else {
+                EnumField {
+                    value: String::new(),
+                    options: Vec::new(),
+                }
+            };
+            enums.push(new_enum);
         }
     }
 }

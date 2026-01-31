@@ -11,16 +11,10 @@ label = "Author"
 type = "string"
 value = "@Garkatron"
 
-[meta.object_type]
-label = "Object Type"
-type = "string"
-value = "BLOCK"
-
-[meta.format_version]
-label = "Format Version"
-type = "float"
-value = 2.0
-
+# [meta.format_version]
+# label = "Format Version"
+# type = "float"
+# value = 2.0
 
 # =========================
 # Datos principales
@@ -38,8 +32,19 @@ value = "Jade Gold Decorated 8"
 [data.tags]
 label = "Tags"
 type = "array"
+array_type = "enums"
 editable = true
-value = [ "mineable_by_pickaxe" ]
+template = true
+
+[[data.tags.items]]
+value = "mineable_by_pickaxe"
+options = ["mineable_by_pickaxe", "mineable_by_axe", "mineable_by_shovel"]
+
+# [data.tags]
+# label = "Tags"
+# type = "array"
+# editable = true
+# value = [ "mineable_by_pickaxe" ]
 
 [data.immovable]
 label = "Immovable"
@@ -138,18 +143,25 @@ value = true
 [events.on_break.drops]
 label = "Drop Rules"
 type = "table"
+editable = true
+template = true
 
-[events.on_break.drops.item]
+[events.on_break.drops.drop]
+label = "Drop"
+type = "table"
+
+[events.on_break.drops.drop.item]
 label = "Item ID"
-type = "float"
-value = 0.0
+type = "integer"
+value = 0
 
-[events.on_break.drops.cause]
+[events.on_break.drops.drop.cause]
 label = "Cause"
-type = "string"
+type = "enum"
 value = "PROPER_TOOL"
+options = ["PROPER_TOOL", "ANY_TOOL", "ANYTHING"]
 
-[events.on_break.drops.chance]
+[events.on_break.drops.drop.chance]
 label = "Chance"
 type = "float"
 value = 0.0
@@ -164,9 +176,9 @@ type = "table"
 
 [sounds.sound]
 label = "Sound Type"
-type = "string"
+type = "enum"
 value = "METAL"
-
+options = ["DIRTH", "STONE", "GLASS", "METAL"]
 
 # =========================
 # Recetas
@@ -208,11 +220,8 @@ type = "table"
 [recipe.workbench.pattern]
 label = "Crafting Pattern"
 type = "array"
-value = [
-  [ "X", "X", "X" ],
-  [ "X", "X", "X" ],
-  [ "X", "X", "X" ]
-]
+array_type = "strings"
+items = [ "XXX", "XXX", "XXX" ]
 
 [recipe.workbench.output_amount]
 label = "Output Amount"
@@ -221,11 +230,14 @@ value = 0.0
 
 [recipe.workbench.symbols]
 label = "Workbench Symbols"
-type = "array"
-value = [
-  { X = 1.0 }
-]
+type = "table"
+template = true
+editable = true
 
+[recipe.workbench.symbols.X]
+label = "Symbol X"
+type = "float"
+value = 1.0
 
 # =========================
 # Idiomas

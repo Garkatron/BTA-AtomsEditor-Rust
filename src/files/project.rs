@@ -59,7 +59,7 @@ impl File {
 }
 
 impl Project {
-    pub fn new(name: &str, path: &Path) -> Self {
+    pub fn new(name: &str, path: &PathBuf) -> Self {
         Project {
             name: name.to_string(),
             path: path.to_path_buf(),
@@ -73,12 +73,22 @@ impl Project {
         }
     }
 
-    pub fn from(path: &Path) -> Result<Self, ProjectError> {
+    pub fn from(path: &PathBuf) -> Result<Self, ProjectError> {
         let name = path
             .file_name()
             .ok_or(ProjectError::InvalidPath)?
             .to_string_lossy()
             .into_owned();
+        Ok(Project::new(&name, path))
+    }
+
+    pub fn try_from_path(path: &PathBuf) -> Result<Self, ProjectError> {
+        let name = path
+            .file_name()
+            .ok_or(ProjectError::InvalidPath)?
+            .to_string_lossy()
+            .into_owned();
+
         Ok(Project::new(&name, path))
     }
 
