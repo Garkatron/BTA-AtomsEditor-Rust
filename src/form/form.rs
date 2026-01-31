@@ -6,8 +6,20 @@ pub struct Field {
     pub label: Option<String>,
     pub description: Option<String>,
     pub editable: Option<bool>,
+    pub template: Option<bool>,
     #[serde(flatten)]
     pub value: FieldValue,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum FieldType {
+    String,
+    Integer,
+    Float,
+    Boolean,
+    Image,
+    Table,
+    Array,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -79,6 +91,7 @@ impl Field {
             label: None,
             description: None,
             editable: Some(true),
+            template: Some(false),
             value: FieldValue::String {
                 value: String::new(),
                 default: None,
@@ -95,6 +108,7 @@ impl Field {
                 value: 0.0,
                 default: None,
             },
+            template: Some(false),
         }
     }
 
@@ -107,6 +121,7 @@ impl Field {
                 value: 0,
                 default: None,
             },
+            template: Some(false),
         }
     }
 
@@ -119,6 +134,7 @@ impl Field {
                 value: false,
                 default: None,
             },
+            template: Some(false),
         }
     }
 
@@ -131,6 +147,7 @@ impl Field {
                 value: String::new(),
                 texture: None,
             },
+            template: Some(false),
         }
     }
 
@@ -142,6 +159,7 @@ impl Field {
             value: FieldValue::Table {
                 children: IndexMap::new(),
             },
+            template: Some(false),
         }
     }
 
@@ -153,6 +171,7 @@ impl Field {
             value: FieldValue::Array {
                 value: ArrayValue::default(),
             },
+            template: Some(false),
         }
     }
 }

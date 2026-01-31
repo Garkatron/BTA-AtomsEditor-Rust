@@ -243,9 +243,10 @@ value = "jade_gold_decorated_8"
 label = "Locales"
 type = "table"
 editable = true
+template = true
 
 [lang.locales.en_US]
-label = "English (US)"
+label = "en_US"
 type = "table"
 
 [lang.locales.en_US.name]
