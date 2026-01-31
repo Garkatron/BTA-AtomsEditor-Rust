@@ -3,6 +3,10 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
+    use std::path::PathBuf;
+
+    use atom_editor::editor::EditorApp;
+
     env_logger::init();
 
     let args: Vec<String> = std::env::args().collect();
@@ -25,7 +29,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         &format!("Editor - {}", project_path),
         native_options,
-        Box::new(move |cc| Ok(Box::new(mi_proyecto::EditorApp::new(cc, project_path)))),
+        Box::new(move |cc| Ok(Box::new(EditorApp::new(cc, PathBuf::from(project_path))))),
     )
 }
 

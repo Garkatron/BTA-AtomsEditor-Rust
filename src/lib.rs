@@ -1,8 +1,10 @@
 #![warn(clippy::all, rust_2018_idioms)]
 
-mod app;
-pub use app::TemplateApp;
-mod components;
-mod config;
-mod files;
-mod form;
+pub mod editor;
+pub mod selector;
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct ProjectInfo {
+    pub name: String,
+    pub path: String,
+}

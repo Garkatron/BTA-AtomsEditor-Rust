@@ -4,6 +4,8 @@
 // Desktop
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
+    use atom_editor::selector::SelectorApp;
+
     env_logger::init();
 
     let native_options = eframe::NativeOptions {
@@ -18,9 +20,9 @@ fn main() -> eframe::Result {
     };
 
     eframe::run_native(
-        "Selector de Proyectos",
+        "atom_editor_selector",
         native_options,
-        Box::new(|cc| Ok(Box::new(mi_proyecto::SelectorApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(SelectorApp::new(cc)))),
     )
 }
 

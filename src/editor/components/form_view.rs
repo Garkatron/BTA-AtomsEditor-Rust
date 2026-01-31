@@ -3,7 +3,7 @@ use image::imageops::FilterType;
 use indexmap::IndexMap;
 use toml::Value;
 
-use crate::{
+use crate::editor::{
     components::form_config::FormConfig,
     form::form::{ArrayValue, Document, EnumField, Field, FieldType, FieldValue},
 };
@@ -291,7 +291,7 @@ impl Form {
                                 )
                                 .clicked()
                             {
-                                remove_key = Some(child_key.clone());
+                                remove_key = Some(child_key.to_string());
                             }
                         }
                     });

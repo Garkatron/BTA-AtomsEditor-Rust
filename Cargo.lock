@@ -432,6 +432,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "atom_editor"
+version = "0.1.0"
+dependencies = [
+ "eframe",
+ "egui",
+ "egui_ltreeview",
+ "env_logger",
+ "image",
+ "indexmap",
+ "log",
+ "rfd",
+ "rust-embed",
+ "serde",
+ "toml",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1050,25 +1069,6 @@ dependencies = [
  "web-time",
  "windows-sys 0.61.2",
  "winit",
-]
-
-[[package]]
-name = "eframe_template"
-version = "0.1.0"
-dependencies = [
- "eframe",
- "egui",
- "egui_ltreeview",
- "env_logger",
- "image",
- "indexmap",
- "log",
- "rfd",
- "rust-embed",
- "serde",
- "toml",
- "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]
