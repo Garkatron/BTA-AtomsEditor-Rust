@@ -38,6 +38,7 @@ value = "Jade Gold Decorated 8"
 [data.tags]
 label = "Tags"
 type = "array"
+editable = true
 value = [ "mineable_by_pickaxe" ]
 
 [data.immovable]
@@ -89,32 +90,32 @@ type = "table"
 
 [textures.faces.top]
 label = "Top Texture"
-type = "string"
+type = "image"
 value = "jade:block/jc8"
 
 [textures.faces.bottom]
 label = "Bottom Texture"
-type = "string"
+type = "image"
 value = "jade:block/jc8"
 
 [textures.faces.north]
 label = "North Texture"
-type = "string"
+type = "image"
 value = "jade:block/jc8"
 
 [textures.faces.south]
 label = "South Texture"
-type = "string"
+type = "image"
 value = "jade:block/jc8"
 
 [textures.faces.east]
 label = "East Texture"
-type = "string"
+type = "image"
 value = "jade:block/jc8"
 
 [textures.faces.west]
 label = "West Texture"
-type = "string"
+type = "image"
 value = "jade:block/jc8"
 
 
@@ -136,10 +137,22 @@ value = true
 
 [events.on_break.drops]
 label = "Drop Rules"
-type = "array"
-value = [
-  { item = 0.0, cause = "PROPER_TOOL", chance = 0.0 }
-]
+type = "table"
+
+[events.on_break.drops.item]
+label = "Item ID"
+type = "float"
+value = 0.0
+
+[events.on_break.drops.cause]
+label = "Cause"
+type = "string"
+value = "PROPER_TOOL"
+
+[events.on_break.drops.chance]
+label = "Chance"
+type = "float"
+value = 0.0
 
 
 # =========================
@@ -229,6 +242,7 @@ value = "jade_gold_decorated_8"
 [lang.locales]
 label = "Locales"
 type = "table"
+editable = true
 
 [lang.locales.en_US]
 label = "English (US)"

@@ -28,6 +28,8 @@ egui_ltreeview = "0.6.1"
 toml = { version = "0.9.11", features = ["preserve_order"]}
 rust-embed = "8.11.0"
 indexmap = { version = "2.13.0", features = ["serde"] }
+rfd = "0.17.2"
+image = "0.25.9"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

@@ -1,21 +1,28 @@
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Field {
     pub label: Option<String>,
     pub description: Option<String>,
+    pub editable: Option<bool>,
     #[serde(flatten)]
     pub value: FieldValue,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 pub enum FieldValue {
     #[serde(rename = "string")]
     String {
         value: String,
         default: Option<String>,
+    },
+    #[serde(rename = "image")]
+    Image {
+        value: String,
+        #[serde(skip)]
+        texture: Option<egui::TextureHandle>,
     },
     #[serde(rename = "float")]
     Float { value: f64, default: Option<f64> },
@@ -35,7 +42,7 @@ pub enum FieldValue {
     },
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum ArrayValue {
     Strings(Vec<String>),
@@ -44,7 +51,7 @@ pub enum ArrayValue {
     Mixed(Vec<toml::Value>),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Document {
     #[serde(flatten)]
     pub fields: IndexMap<String, Field>,
@@ -63,5 +70,89 @@ impl Document {
 impl Default for ArrayValue {
     fn default() -> Self {
         ArrayValue::Strings(Vec::new())
+    }
+}
+
+impl Field {
+    pub fn default_string() -> Self {
+        Self {
+            label: None,
+            description: None,
+            editable: Some(true),
+            value: FieldValue::String {
+                value: String::new(),
+                default: None,
+            },
+        }
+    }
+
+    pub fn default_float() -> Self {
+        Self {
+            label: None,
+            description: None,
+            editable: Some(true),
+            value: FieldValue::Float {
+                value: 0.0,
+                default: None,
+            },
+        }
+    }
+
+    pub fn default_integer() -> Self {
+        Self {
+            label: None,
+            description: None,
+            editable: Some(true),
+            value: FieldValue::Integer {
+                value: 0,
+                default: None,
+            },
+        }
+    }
+
+    pub fn default_boolean() -> Self {
+        Self {
+            label: None,
+            description: None,
+            editable: Some(true),
+            value: FieldValue::Boolean {
+                value: false,
+                default: None,
+            },
+        }
+    }
+
+    pub fn default_image() -> Self {
+        Self {
+            label: None,
+            description: None,
+            editable: Some(true),
+            value: FieldValue::Image {
+                value: String::new(),
+                texture: None,
+            },
+        }
+    }
+
+    pub fn default_table() -> Self {
+        Self {
+            label: None,
+            description: None,
+            editable: Some(true),
+            value: FieldValue::Table {
+                children: IndexMap::new(),
+            },
+        }
+    }
+
+    pub fn default_array() -> Self {
+        Self {
+            label: None,
+            description: None,
+            editable: Some(true),
+            value: FieldValue::Array {
+                value: ArrayValue::default(),
+            },
+        }
     }
 }
